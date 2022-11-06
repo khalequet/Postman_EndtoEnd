@@ -1,0 +1,701 @@
+{
+	"info": {
+		"_postman_id": "405f65a9-a6f6-4dc1-8dd7-301b1bb540ae",
+		"name": "May_2022_End2End",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "14096516"
+	},
+	"item": [
+		{
+			"name": "1. Signup new member",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.environment.set(\"FirstName\", pm.variables.replaceIn(\"{{$randomFirstName}}\"));\r",
+							"pm.environment.set(\"LastName\", pm.variables.replaceIn(\"{{$randomLastName}}\"));\r",
+							"pm.environment.set(\"Email\", pm.variables.replaceIn(\"{{$randomEmail}}\"));\r",
+							"\r",
+							"pm.environment.set(\"DOBYear\", _.random(1935,2013));\r",
+							"pm.environment.set(\"DOBDay\", _.random(1,28));\r",
+							"pm.environment.set(\"DOBMonth\", _.random(1,12));\r",
+							"\r",
+							"var i=_.random(0,1);\r",
+							"if(i>0){\r",
+							"    pm.environment.set(\"Gender\",\"male\")\r",
+							"}else{\r",
+							"    pm.environment.set(\"Gender\",\"female\")\r",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const resData= pm.response.json();\r",
+							"\r",
+							"pm.test('Test status code to be 201', function(){\r",
+							"    pm.response.to.have.status(201);\r",
+							"});\r",
+							"\r",
+							"pm.test('Test to make sure that response body has correct data', function(){\r",
+							"    pm.expect(resData.success,\"The property does not match\").to.eq(true);\r",
+							"    pm.expect(resData.message).to.be.eq(\"Registration Success\");\r",
+							"\r",
+							"});\r",
+							"\r",
+							"\r",
+							"\r",
+							"pm.environment.set(\"StudentID\", resData.id);\r",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"firstName\" : \"{{FirstName}}\",\r\n    \"lastName\" : \"{{LastName}}\",\r\n    \"email\" : \"{{Email}}\",\r\n    \"password\" : \"{{Password}}\",\r\n    \"confirmPassword\" : \"{{Password}}\",\r\n    \"dob\" : {\r\n        \"month\" : {{DOBMonth}},\r\n        \"year\" : {{DOBYear}},\r\n        \"day\" : {{DOBDay}}\r\n    },\r\n    \"gender\" : \"{{Gender}}\",\r\n    \"agree\" : true\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BaseURL}}signup",
+					"host": [
+						"{{BaseURL}}signup"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "2. Verify new user can login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const responseData = pm.response.json();\r",
+							"\r",
+							"pm.test('Verify the status is 200', function(){\r",
+							"    pm.response.to.have.status(200);\r",
+							"})\r",
+							"\r",
+							"pm.test('Verify that the success is true', function(){\r",
+							"    pm.expect(responseData.success,\"The request was not successful\").to.be.eq(true)\r",
+							"})\r",
+							"\r",
+							"pm.test('Verify message in response body', function(){\r",
+							"    pm.expect(responseData.message, \"The message body does not match\").to.be.eq(\"Login Success\")\r",
+							"})\r",
+							"\r",
+							"pm.environment.set(\"bearerToken\", responseData.token)"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"id\" : \"{{StudentID}}\",\r\n    \"password\" : \"{{Password}}\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BaseURL}}login",
+					"host": [
+						"{{BaseURL}}login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "3. Verify user data stored correctly during signup",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const responseData = pm.response.json();\r",
+							"\r",
+							"pm.test(\"To verify that the status to be 200\", function(){\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"To verify the message from the respnse body\", function(){\r",
+							"    pm.expect(responseData.message, \"The response body does not have the correct data\").to.be.eq(\"Student Found\");\r",
+							"});\r",
+							"\r",
+							"pm.test(\"To verify that the first name is correct\", function(){\r",
+							"    pm.expect(responseData.data.firstName, \"The first name does not match\").to.be.eq(pm.environment.get(\"FirstName\"));\r",
+							"});\r",
+							"\r",
+							"pm.test(\"To verify that the last name is correct\", function(){\r",
+							"    pm.expect(responseData.data.lastName, \"The Last name does not match\").to.be.eq(pm.environment.get(\"LastName\"));\r",
+							"});\r",
+							"\r",
+							"pm.test(\"To verify that the email is correct\", function(){\r",
+							"    pm.expect(responseData.data.email, \"The email does not match\").to.be.eq(pm.environment.get(\"Email\"));\r",
+							"});\r",
+							"\r",
+							"pm.test(\"To verify that the gender is correct\", function(){\r",
+							"    pm.expect(responseData.data.gender, \"The gender does not match\").to.be.eq(pm.environment.get(\"Gender\"));\r",
+							"});\r",
+							"\r",
+							"\r",
+							"let dobMonth;\r",
+							"let dobDay;\r",
+							"pm.test(\"To verify that the date of birth is correct\", function(){\r",
+							"    if(pm.environment.get(\"DOBMonth\")<10)\r",
+							"    {\r",
+							"        dobMonth= \"0\"+pm.environment.get(\"DOBMonth\")\r",
+							"    }\r",
+							"    else{\r",
+							"        dobMonth= pm.environment.get(\"DOBMonth\")\r",
+							"    }\r",
+							"    if(pm.environment.get(\"DOBDay\")<10)\r",
+							"    {\r",
+							"        dobDay = \"0\"+pm.environment.get(\"DOBDay\")\r",
+							"    }\r",
+							"    else{\r",
+							"        dobDay = pm.environment.get(\"DOBDay\")\r",
+							"    }\r",
+							"    pm.expect(responseData.data.dob, \"The date of birth does not match\").to.be.eq(pm.environment.get(\"DOBYear\")+\"-\"+dobMonth+\"-\"+dobDay);\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{BaseURL}}student/{{StudentID}}",
+					"host": [
+						"{{BaseURL}}student"
+					],
+					"path": [
+						"{{StudentID}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "4. Update student information Copy",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.environment.set(\"FirstNameUpdated\", pm.variables.replaceIn(\"{{$randomFirstName}}\"));\r",
+							"pm.environment.set(\"LastNameUpdated\", pm.variables.replaceIn(\"{{$randomLastName}}\"));\r",
+							"pm.environment.set(\"EmailUpdated\", pm.variables.replaceIn(\"{{$randomEmail}}\"));\r",
+							"\r",
+							"pm.environment.set(\"DOBYearUpdated\", _.random(1935,2013));\r",
+							"pm.environment.set(\"DOBDayUpdated\", _.random(1,28));\r",
+							"pm.environment.set(\"DOBMonthUpdated\", _.random(1,12));\r",
+							"\r",
+							"var i=_.random(0,1);\r",
+							"if(i>0){\r",
+							"    pm.environment.set(\"GenderUpdated\",\"male\")\r",
+							"}else{\r",
+							"    pm.environment.set(\"GenderUpdated\",\"female\")\r",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const responseData = pm.response.json()\r",
+							"\r",
+							"pm.test(\"Test status code 200\", function(){\r",
+							"    pm.response.to.have.status(200)\r",
+							"})\r",
+							"\r",
+							"pm.test(\"Test success message\", function(){\r",
+							"    pm.expect(responseData.success).to.be.eq(true)\r",
+							"})\r",
+							"\r",
+							"pm.test(\"Test response message\", function(){\r",
+							"    pm.expect(responseData.message).to.be.eq(\"Update success\")\r",
+							"})"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{bearerToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"firstName\" : \"{{FirstNameUpdated}}\",\r\n    \"lastName\" : \"{{LastNameUpdated}}\",\r\n    \"email\"     : \"{{EmailUpdated}}\",\r\n    \"dob\"       : {\r\n        \"year\"      : {{DOBYearUpdated}},\r\n        \"month\"     : {{DOBMonthUpdated}},\r\n        \"day\"       : {{DOBDayUpdated}}\r\n    },\r\n    \"gender\"    : \"{{GenderUpdated}}\",\r\n    \"agree\"     : true\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BaseURL}}student/{{StudentID}}",
+					"host": [
+						"{{BaseURL}}student"
+					],
+					"path": [
+						"{{StudentID}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "5. Test to verify that updated information correctly",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const responseData = pm.response.json();\r",
+							"\r",
+							"pm.test(\"To verify that the status to be 200\", function(){\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"To verify the message from the respnse body\", function(){\r",
+							"    pm.expect(responseData.message, \"The response body does not have the correct data\").to.be.eq(\"Student Found\");\r",
+							"});\r",
+							"\r",
+							"pm.test(\"To verify that the first name is correct\", function(){\r",
+							"    pm.expect(responseData.data.firstName, \"The first name does not match\").to.be.eq(pm.environment.get(\"FirstNameUpdated\"));\r",
+							"});\r",
+							"\r",
+							"pm.test(\"To verify that the last name is correct\", function(){\r",
+							"    pm.expect(responseData.data.lastName, \"The Last name does not match\").to.be.eq(pm.environment.get(\"LastNameUpdated\"));\r",
+							"});\r",
+							"\r",
+							"pm.test(\"To verify that the email is correct\", function(){\r",
+							"    pm.expect(responseData.data.email, \"The email does not match\").to.be.eq(pm.environment.get(\"EmailUpdated\"));\r",
+							"});\r",
+							"\r",
+							"pm.test(\"To verify that the gender is correct\", function(){\r",
+							"    pm.expect(responseData.data.gender, \"The gender does not match\").to.be.eq(pm.environment.get(\"GenderUpdated\"));\r",
+							"});\r",
+							"\r",
+							"\r",
+							"let dobMonth;\r",
+							"let dobDay;\r",
+							"pm.test(\"To verify that the date of birth is correct\", function(){\r",
+							"    if(pm.environment.get(\"DOBMonthUpdated\")<10)\r",
+							"    {\r",
+							"        dobMonth= \"0\"+pm.environment.get(\"DOBMonthUpdated\")\r",
+							"    }\r",
+							"    else{\r",
+							"        dobMonth= pm.environment.get(\"DOBMonthUpdated\")\r",
+							"    }\r",
+							"    if(pm.environment.get(\"DOBDayUpdated\")<10)\r",
+							"    {\r",
+							"        dobDay = \"0\"+pm.environment.get(\"DOBDayUpdated\")\r",
+							"    }\r",
+							"    else{\r",
+							"        dobDay = pm.environment.get(\"DOBDayUpdated\")\r",
+							"    }\r",
+							"    pm.expect(responseData.data.dob, \"The date of birth does not match\").to.be.eq(pm.environment.get(\"DOBYearUpdated\")+\"-\"+dobMonth+\"-\"+dobDay);\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{BaseURL}}student/{{StudentID}}",
+					"host": [
+						"{{BaseURL}}student"
+					],
+					"path": [
+						"{{StudentID}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "6. Change Password",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const resData = pm.response.json();\r",
+							"\r",
+							"pm.test(\"Test responce status code as 200\", function(){\r",
+							" pm.response.to.have.status(200);\r",
+							"})\r",
+							"\r",
+							"pm.test(\"Test message is correct\", function(){\r",
+							"    pm.expect(resData.message).to.be.eq(\"Password update success\")\r",
+							"})\r",
+							"\r",
+							"pm.test(\"Verify success\", function(){\r",
+							"\r",
+							"    pm.expect(resData.success).to.be.eq(true)\r",
+							"})"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{bearerToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PATCH",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n\"password\":\"{{PasswordUpdated}}\",\r\n\"confirmPassword\":\"{{PasswordUpdated}}\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BaseURL}}updatePassword/{{StudentID}}",
+					"host": [
+						"{{BaseURL}}updatePassword"
+					],
+					"path": [
+						"{{StudentID}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "7. Test user can login with new password",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const responseData = pm.response.json();\r",
+							"\r",
+							"pm.test('Verify the status is 200', function(){\r",
+							"    pm.response.to.have.status(200);\r",
+							"})\r",
+							"\r",
+							"pm.test('Verify that the success is true', function(){\r",
+							"    pm.expect(responseData.success,\"The request was not successful\").to.be.eq(true)\r",
+							"})\r",
+							"\r",
+							"pm.test('Verify message in response body', function(){\r",
+							"    pm.expect(responseData.message, \"The message body does not match\").to.be.eq(\"Login Success\")\r",
+							"})\r",
+							"\r",
+							"pm.environment.set(\"bearerToken\", responseData.token)"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"id\" : \"{{StudentID}}\",\r\n    \"password\" : \"{{PasswordUpdated}}\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BaseURL}}login",
+					"host": [
+						"{{BaseURL}}login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "8. Verify user cannot login with old password",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const responseData = pm.response.json();\r",
+							"\r",
+							"pm.test('Verify the status is 200', function(){\r",
+							"    pm.response.to.have.status(401);\r",
+							"})\r",
+							"\r",
+							"pm.test('Verify that the success is true', function(){\r",
+							"    pm.expect(responseData.success,\"The request was not successful\").not.to.be.eq(true)\r",
+							"})\r",
+							"\r",
+							"pm.test('Verify message in response body', function(){\r",
+							"    pm.expect(responseData.message, \"The message body does not match\").not.to.be.eq(\"Login Success\")\r",
+							"})\r",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"id\" : \"{{StudentID}}\",\r\n    \"password\" : \"{{Password}}\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{BaseURL}}login",
+					"host": [
+						"{{BaseURL}}login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "9. Get all students information Copy",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{BaseURL}}students",
+					"host": [
+						"{{BaseURL}}students"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "10. Delete student",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const resData = pm.response.json();\r",
+							"\r",
+							"pm.test(\"Test responce status code as 200\", function(){\r",
+							" pm.response.to.have.status(200);\r",
+							"})\r",
+							"\r",
+							"pm.test(\"Test message is correct\", function(){\r",
+							"    pm.expect(resData.messages).to.be.eq(\"Data Deleted\")\r",
+							"})\r",
+							"\r",
+							"pm.test(\"Verify success\", function(){\r",
+							"\r",
+							"    pm.expect(resData.success).to.be.eq(true)\r",
+							"})"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{bearerToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{BaseURL}}student/{{StudentID}}",
+					"host": [
+						"{{BaseURL}}student"
+					],
+					"path": [
+						"{{StudentID}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "11. Verify student does not exist after deleting",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const resData = pm.response.json();\r",
+							"\r",
+							"pm.test(\"Test responce status code as 200\", function(){\r",
+							" pm.response.to.have.status(404);\r",
+							"})\r",
+							"\r",
+							"pm.test(\"Test message is correct\", function(){\r",
+							"    pm.expect(resData.messages.error).to.be.eq(\"No Student Found with id \"+pm.environment.get(\"StudentID\"))\r",
+							"})\r",
+							"\r",
+							"pm.test(\"Verify error\", function(){\r",
+							"\r",
+							"    pm.expect(resData.error).to.be.eq(404)\r",
+							"})"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{BaseURL}}student/{{StudentID}}",
+					"host": [
+						"{{BaseURL}}student"
+					],
+					"path": [
+						"{{StudentID}}"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "BaseURL",
+			"value": "https://qa.taltektc.com/api/",
+			"type": "string"
+		},
+		{
+			"key": "AuthToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "StudentID",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "FirstName",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "LastName",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "Email",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "Password",
+			"value": "123456",
+			"type": "string"
+		},
+		{
+			"key": "ConfirmPassword",
+			"value": "123456",
+			"type": "string"
+		},
+		{
+			"key": "DOBYear",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "DOBMonth",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "DOBDay",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "Gender",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
